@@ -26,9 +26,6 @@ jobs:
             cd /home/deploy/app
             git pull origin main
 
-            # Write only secrets + vars with no safe default.
-            # Everything else already has a correct default in docker-compose.yml.
-            # LIQUIBASE_CONTEXTS is intentionally empty: seeds schema only, no demo data.
             cat > .env << 'EOF'
             POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
             JWT_SECRET=${{ secrets.JWT_SECRET }}

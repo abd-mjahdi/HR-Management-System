@@ -36,7 +36,7 @@ spring:
   liquibase:
     enabled: true
     change-log: classpath:db/changelog/db.changelog-master.yaml
-    # Default includes demo tenants. For a true first-run bootstrap, recreate the DB with LIQUIBASE_CONTEXTS empty.
+    # prod = schema only, seed = demo data, prod,seed = both. Empty = nothing runs.
     contexts: ${LIQUIBASE_CONTEXTS:seed}
 
 holidays:

@@ -2,7 +2,30 @@ const RESERVED_SLUGS = new Set(['www', 'api', 'app', 'admin', 'mail', 'localhost
 const SLUG_PATTERN = /^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$/;
 const LOCAL_SUFFIX = '.localhost';
 const BASE_DOMAIN = 'myhr.com';
+const NIP_IO_SUFFIX = '.nip.io';
 const LOCAL_API_PORT = 8080;
+
+/**
+ * Detects the base domain from a hostname dynamically.
+ * Handles: *.localhost, *.myhr.com, *.IP.nip.io (e.g. acme.151.80.56.83.nip.io)
+ * Returns the suffix including the leading dot, or null if not a tenant host.
+ */
+function detectBaseSuffix(host: string): string | null {
+  if (host.endsWith(LOCAL_SUFFIX)) {
+    return LOCAL_SUFFIX;
+  }
+  if (host.endsWith(`.${BASE_DOMAIN}`)) {
+    return `.${BASE_DOMAIN}`;
+  }
+  // nip.io: slug.IP.nip.io — suffix is everything after the first dot
+  if (host.endsWith(NIP_IO_SUFFIX)) {
+    const firstDot = host.indexOf('.');
+    if (firstDot > 0 && firstDot < host.length - NIP_IO_SUFFIX.length) {
+      return host.substring(firstDot);
+    }
+  }
+  return null;
+}
 
 export function parseTenantSlug(hostname: string | null | undefined): string | null {
   if (!hostname) {
@@ -13,16 +36,13 @@ export function parseTenantSlug(hostname: string | null | undefined): string | n
     return null;
   }
 
-  if (host.endsWith(LOCAL_SUFFIX)) {
-    const slug = host.slice(0, -LOCAL_SUFFIX.length);
-    return usableSlug(slug);
-  }
-
   if (host === BASE_DOMAIN || host === `www.${BASE_DOMAIN}`) {
     return null;
   }
-  if (host.endsWith(`.${BASE_DOMAIN}`)) {
-    const slug = host.slice(0, -(BASE_DOMAIN.length + 1));
+
+  const suffix = detectBaseSuffix(host);
+  if (suffix) {
+    const slug = host.slice(0, -suffix.length);
     return usableSlug(slug);
   }
 
@@ -48,9 +68,14 @@ export function parseCompanyDomainInput(raw: string | null | undefined): string 
 
 export function companyPortalHost(slug: string, currentHostname: string): string {
   const host = currentHostname.toLowerCase();
-  if (host === BASE_DOMAIN || host === `www.${BASE_DOMAIN}` || host.endsWith(`.${BASE_DOMAIN}`)) {
-    return `${slug}.${BASE_DOMAIN}`;
+  const suffix = detectBaseSuffix(host);
+  if (suffix && suffix !== LOCAL_SUFFIX) {
+    return `${slug}${suffix}`;
   }
+  if (suffix === LOCAL_SUFFIX) {
+    return `${slug}.localhost`;
+  }
+  // Fallback: if we can't detect the domain, use the current host's suffix
   return `${slug}.localhost`;
 }
 
@@ -65,10 +90,8 @@ export function companyPortalLoginUrl(
 
 export function companyDomainSuffix(currentHostname: string): string {
   const host = currentHostname.toLowerCase();
-  if (host === BASE_DOMAIN || host === `www.${BASE_DOMAIN}` || host.endsWith(`.${BASE_DOMAIN}`)) {
-    return `.${BASE_DOMAIN}`;
-  }
-  return LOCAL_SUFFIX;
+  const suffix = detectBaseSuffix(host);
+  return suffix ?? LOCAL_SUFFIX;
 }
 
 function usableSlug(slug: string): string | null {

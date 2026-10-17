@@ -1,4 +1,4 @@
-import { apiBaseUrlForHost, parseCompanyDomainInput, parseTenantSlug, companyPortalLoginUrl } from './tenant.util';
+import { apiBaseUrlForHost, parseCompanyDomainInput, parseTenantSlug, companyPortalLoginUrl, companyDomainSuffix } from './tenant.util';
 
 describe('parseTenantSlug', () => {
   it('reads acme from acme.localhost', () => {
@@ -7,6 +7,15 @@ describe('parseTenantSlug', () => {
 
   it('normalizes Acme.MyHR.com', () => {
     expect(parseTenantSlug('Acme.MyHR.com')).toBe('acme');
+  });
+
+  it('reads slug from nip.io hostname', () => {
+    expect(parseTenantSlug('acme.151.80.56.83.nip.io')).toBe('acme');
+    expect(parseTenantSlug('globex.10.0.0.1.nip.io')).toBe('globex');
+  });
+
+  it('rejects bare nip.io without slug', () => {
+    expect(parseTenantSlug('151.80.56.83.nip.io')).toBeNull();
   });
 
   it('rejects apex, reserved, and bare localhost', () => {
@@ -28,6 +37,10 @@ describe('parseCompanyDomainInput', () => {
     expect(parseCompanyDomainInput('http://globex.localhost:4200/login')).toBe('globex');
   });
 
+  it('accepts a nip.io host', () => {
+    expect(parseCompanyDomainInput('acme.151.80.56.83.nip.io')).toBe('acme');
+  });
+
   it('rejects reserved slugs', () => {
     expect(parseCompanyDomainInput('api')).toBeNull();
     expect(parseCompanyDomainInput('localhost')).toBeNull();
@@ -40,10 +53,30 @@ describe('companyPortalLoginUrl', () => {
       companyPortalLoginUrl('acme', { protocol: 'http:', hostname: 'localhost', port: '4200' })
     ).toBe('http://acme.localhost:4200/login');
   });
+
+  it('routes nip.io to slug.IP.nip.io', () => {
+    expect(
+      companyPortalLoginUrl('acme', { protocol: 'http:', hostname: 'globex.151.80.56.83.nip.io', port: '' })
+    ).toBe('http://acme.151.80.56.83.nip.io/login');
+  });
+});
+
+describe('companyDomainSuffix', () => {
+  it('returns nip.io suffix for nip.io hosts', () => {
+    expect(companyDomainSuffix('acme.151.80.56.83.nip.io')).toBe('.151.80.56.83.nip.io');
+  });
+
+  it('returns .localhost for local hosts', () => {
+    expect(companyDomainSuffix('acme.localhost')).toBe('.localhost');
+  });
 });
 
 describe('apiBaseUrlForHost', () => {
   it('uses port 8080 on localhost tenants', () => {
     expect(apiBaseUrlForHost('acme.localhost', 'http:')).toBe('http://acme.localhost:8080');
+  });
+
+  it('uses no port on nip.io tenants', () => {
+    expect(apiBaseUrlForHost('acme.151.80.56.83.nip.io', 'http:')).toBe('http://acme.151.80.56.83.nip.io');
   });
 });

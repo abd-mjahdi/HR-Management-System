@@ -18,15 +18,12 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
-            # Clone repo on first run, pull on subsequent runs
             if [ ! -d /home/deploy/app/.git ]; then
-                git clone https://github.com/abd-mjahdi/Employee-HR-Management-System.git /home/deploy/app
+              git clone https://github.com/abd-mjahdi/Employee-HR-Management-System.git /home/deploy/app
             fi
-
             cd /home/deploy/app
             git pull origin main
-
-            cat > .env << 'EOF'
+            cat > .env <<EOF
             POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
             JWT_SECRET=${{ secrets.JWT_SECRET }}
             SPRING_PROFILES_ACTIVE=prod
@@ -35,6 +32,4 @@ jobs:
             FRONTEND_TENANT_URL_TEMPLATE=http://{slug}.151.80.56.83.nip.io
             LIQUIBASE_CONTEXTS=prod
             EOF
-
-            # Deploy (--remove-orphans cleans up containers from removed services)
             docker compose up --build -d --remove-orphans

@@ -30,6 +30,6 @@ jobs:
             TENANT_BASE_DOMAIN=151.80.56.83.nip.io
             TENANT_TRUST_FORWARDED_HOST=true
             FRONTEND_TENANT_URL_TEMPLATE=http://{slug}.151.80.56.83.nip.io
-            LIQUIBASE_CONTEXTS=prod
+            LIQUIBASE_CONTEXTS=prod,seed
             EOF
             docker compose up --build -d --remove-orphans

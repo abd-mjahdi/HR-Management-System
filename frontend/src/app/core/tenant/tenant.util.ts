@@ -1,23 +1,12 @@
 const RESERVED_SLUGS = new Set(['www', 'api', 'app', 'admin', 'mail', 'localhost']);
 const SLUG_PATTERN = /^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$/;
 const LOCAL_SUFFIX = '.localhost';
-const BASE_DOMAIN = 'myhr.com';
-const NIP_IO_SUFFIX = '.nip.io';
+const BASE_DOMAIN = 'workline.casa';
 const LOCAL_API_PORT = 8080;
-
-/** Simple check: is this a bare IPv4 address like 151.80.56.83? */
-const IPV4_PATTERN = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/;
-
-function isPublicIp(host: string): boolean {
-  if (!IPV4_PATTERN.test(host)) return false;
-  // Exclude local/private IPs — those should use .localhost
-  return !host.startsWith('127.') && !host.startsWith('10.') &&
-         !host.startsWith('192.168.') && !host.startsWith('172.');
-}
 
 /**
  * Detects the base domain from a hostname dynamically.
- * Handles: *.localhost, *.myhr.com, *.IP.nip.io (e.g. acme.151.80.56.83.nip.io)
+ * Handles: *.localhost (local dev), *.workline.casa (production)
  * Returns the suffix including the leading dot, or null if not a tenant host.
  */
 function detectBaseSuffix(host: string): string | null {
@@ -27,21 +16,7 @@ function detectBaseSuffix(host: string): string | null {
   if (host.endsWith(`.${BASE_DOMAIN}`)) {
     return `.${BASE_DOMAIN}`;
   }
-  // nip.io: slug.IP.nip.io — suffix is everything after the first dot
-  if (host.endsWith(NIP_IO_SUFFIX)) {
-    const firstDot = host.indexOf('.');
-    if (firstDot > 0 && firstDot < host.length - NIP_IO_SUFFIX.length) {
-      return host.substring(firstDot);
-    }
-  }
   return null;
-}
-
-/**
- * Returns the nip.io suffix for a bare IP, e.g. '151.80.56.83' -> '.151.80.56.83.nip.io'
- */
-function nipIoSuffix(ip: string): string {
-  return `.${ip}${NIP_IO_SUFFIX}`;
 }
 
 export function parseTenantSlug(hostname: string | null | undefined): string | null {
@@ -50,11 +25,6 @@ export function parseTenantSlug(hostname: string | null | undefined): string | n
   }
   const host = hostname.trim().toLowerCase();
   if (host === 'localhost' || host === '127.0.0.1' || host === '[::1]' || host === '::1') {
-    return null;
-  }
-
-  // Bare public IP has no slug
-  if (isPublicIp(host)) {
     return null;
   }
 
@@ -94,9 +64,9 @@ export function companyPortalHost(slug: string, currentHostname: string): string
   if (suffix && suffix !== LOCAL_SUFFIX) {
     return `${slug}${suffix}`;
   }
-  // Bare public IP -> use nip.io (e.g. 151.80.56.83 -> acme.151.80.56.83.nip.io)
-  if (isPublicIp(host)) {
-    return `${slug}${nipIoSuffix(host)}`;
+  // On the apex domain itself (workline.casa), route to subdomain
+  if (host === BASE_DOMAIN || host === `www.${BASE_DOMAIN}`) {
+    return `${slug}.${BASE_DOMAIN}`;
   }
   return `${slug}.localhost`;
 }
@@ -106,11 +76,10 @@ export function companyPortalLoginUrl(
   location: Pick<Location, 'protocol' | 'hostname' | 'port'>
 ): string {
   const portalHost = companyPortalHost(slug, location.hostname);
-  // Don't append port when redirecting to nip.io (nginx serves on 80)
   const host = location.hostname.toLowerCase();
-  const portPart = (isPublicIp(host) || host.endsWith(NIP_IO_SUFFIX))
-    ? ''
-    : (location.port ? `:${location.port}` : '');
+  // Don't append port for production domain (nginx serves on 80/443)
+  const isProduction = host === BASE_DOMAIN || host === `www.${BASE_DOMAIN}` || host.endsWith(`.${BASE_DOMAIN}`);
+  const portPart = isProduction ? '' : (location.port ? `:${location.port}` : '');
   return `${location.protocol}//${portalHost}${portPart}/login`;
 }
 
@@ -118,7 +87,7 @@ export function companyDomainSuffix(currentHostname: string): string {
   const host = currentHostname.toLowerCase();
   const suffix = detectBaseSuffix(host);
   if (suffix) return suffix;
-  if (isPublicIp(host)) return nipIoSuffix(host);
+  if (host === BASE_DOMAIN || host === `www.${BASE_DOMAIN}`) return `.${BASE_DOMAIN}`;
   return LOCAL_SUFFIX;
 }
 

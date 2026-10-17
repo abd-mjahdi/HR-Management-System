@@ -5,29 +5,17 @@ describe('parseTenantSlug', () => {
     expect(parseTenantSlug('acme.localhost')).toBe('acme');
   });
 
-  it('normalizes Acme.MyHR.com', () => {
-    expect(parseTenantSlug('Acme.MyHR.com')).toBe('acme');
-  });
-
-  it('reads slug from nip.io hostname', () => {
-    expect(parseTenantSlug('acme.151.80.56.83.nip.io')).toBe('acme');
-    expect(parseTenantSlug('globex.10.0.0.1.nip.io')).toBe('globex');
-  });
-
-  it('rejects bare nip.io without slug', () => {
-    expect(parseTenantSlug('151.80.56.83.nip.io')).toBeNull();
-  });
-
-  it('rejects bare public IP', () => {
-    expect(parseTenantSlug('151.80.56.83')).toBeNull();
+  it('reads slug from workline.casa subdomain', () => {
+    expect(parseTenantSlug('acme.workline.casa')).toBe('acme');
+    expect(parseTenantSlug('Acme.Workline.Casa')).toBe('acme');
   });
 
   it('rejects apex, reserved, and bare localhost', () => {
     expect(parseTenantSlug('localhost')).toBeNull();
     expect(parseTenantSlug('127.0.0.1')).toBeNull();
-    expect(parseTenantSlug('myhr.com')).toBeNull();
-    expect(parseTenantSlug('www.myhr.com')).toBeNull();
-    expect(parseTenantSlug('api.myhr.com')).toBeNull();
+    expect(parseTenantSlug('workline.casa')).toBeNull();
+    expect(parseTenantSlug('www.workline.casa')).toBeNull();
+    expect(parseTenantSlug('api.workline.casa')).toBeNull();
   });
 });
 
@@ -41,8 +29,8 @@ describe('parseCompanyDomainInput', () => {
     expect(parseCompanyDomainInput('http://globex.localhost:4200/login')).toBe('globex');
   });
 
-  it('accepts a nip.io host', () => {
-    expect(parseCompanyDomainInput('acme.151.80.56.83.nip.io')).toBe('acme');
+  it('accepts a workline.casa host', () => {
+    expect(parseCompanyDomainInput('acme.workline.casa')).toBe('acme');
   });
 
   it('rejects reserved slugs', () => {
@@ -52,16 +40,16 @@ describe('parseCompanyDomainInput', () => {
 });
 
 describe('companyPortalHost', () => {
-  it('routes bare public IP to slug.IP.nip.io', () => {
-    expect(companyPortalHost('acme', '151.80.56.83')).toBe('acme.151.80.56.83.nip.io');
+  it('routes workline.casa apex to slug.workline.casa', () => {
+    expect(companyPortalHost('acme', 'workline.casa')).toBe('acme.workline.casa');
   });
 
   it('routes localhost to slug.localhost', () => {
     expect(companyPortalHost('acme', 'localhost')).toBe('acme.localhost');
   });
 
-  it('keeps nip.io suffix when already on nip.io', () => {
-    expect(companyPortalHost('acme', 'globex.151.80.56.83.nip.io')).toBe('acme.151.80.56.83.nip.io');
+  it('keeps workline.casa suffix when already on a subdomain', () => {
+    expect(companyPortalHost('acme', 'globex.workline.casa')).toBe('acme.workline.casa');
   });
 });
 
@@ -72,26 +60,20 @@ describe('companyPortalLoginUrl', () => {
     ).toBe('http://acme.localhost:4200/login');
   });
 
-  it('routes bare public IP to slug.IP.nip.io without port', () => {
+  it('routes workline.casa to slug.workline.casa without port', () => {
     expect(
-      companyPortalLoginUrl('acme', { protocol: 'http:', hostname: '151.80.56.83', port: '' })
-    ).toBe('http://acme.151.80.56.83.nip.io/login');
-  });
-
-  it('routes nip.io to slug.IP.nip.io without port', () => {
-    expect(
-      companyPortalLoginUrl('acme', { protocol: 'http:', hostname: 'globex.151.80.56.83.nip.io', port: '' })
-    ).toBe('http://acme.151.80.56.83.nip.io/login');
+      companyPortalLoginUrl('acme', { protocol: 'http:', hostname: 'workline.casa', port: '' })
+    ).toBe('http://acme.workline.casa/login');
   });
 });
 
 describe('companyDomainSuffix', () => {
-  it('returns nip.io suffix for nip.io hosts', () => {
-    expect(companyDomainSuffix('acme.151.80.56.83.nip.io')).toBe('.151.80.56.83.nip.io');
+  it('returns .workline.casa for production hosts', () => {
+    expect(companyDomainSuffix('acme.workline.casa')).toBe('.workline.casa');
   });
 
-  it('returns nip.io suffix for bare public IP', () => {
-    expect(companyDomainSuffix('151.80.56.83')).toBe('.151.80.56.83.nip.io');
+  it('returns .workline.casa for apex', () => {
+    expect(companyDomainSuffix('workline.casa')).toBe('.workline.casa');
   });
 
   it('returns .localhost for local hosts', () => {
@@ -104,7 +86,7 @@ describe('apiBaseUrlForHost', () => {
     expect(apiBaseUrlForHost('acme.localhost', 'http:')).toBe('http://acme.localhost:8080');
   });
 
-  it('uses no port on nip.io tenants', () => {
-    expect(apiBaseUrlForHost('acme.151.80.56.83.nip.io', 'http:')).toBe('http://acme.151.80.56.83.nip.io');
+  it('uses no port on production tenants', () => {
+    expect(apiBaseUrlForHost('acme.workline.casa', 'http:')).toBe('http://acme.workline.casa');
   });
 });

@@ -19,7 +19,7 @@ spring:
 
 app:
   mail:
-    from: ${MAIL_FROM:noreply@yourdomain.com}
+    from: ${MAIL_FROM:noreply@workline.casa}
 
   tenant:
     # Trust X-Forwarded-Host sent by the nginx reverse proxy.

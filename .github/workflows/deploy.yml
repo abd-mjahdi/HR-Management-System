@@ -27,9 +27,9 @@ jobs:
             POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
             JWT_SECRET=${{ secrets.JWT_SECRET }}
             SPRING_PROFILES_ACTIVE=prod
-            TENANT_BASE_DOMAIN=151.80.56.83.nip.io
+            TENANT_BASE_DOMAIN=workline.casa
             TENANT_TRUST_FORWARDED_HOST=true
-            FRONTEND_TENANT_URL_TEMPLATE=http://{slug}.151.80.56.83.nip.io
+            FRONTEND_TENANT_URL_TEMPLATE=http://{slug}.workline.casa
             LIQUIBASE_CONTEXTS=prod,seed
             EOF
             docker compose up --build -d --remove-orphans

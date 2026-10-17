@@ -55,7 +55,7 @@ app:
     # Empty disables POST /internal/bootstrap/company. Set BOOTSTRAP_KEY for first-run only.
     key: ${BOOTSTRAP_KEY:}
   tenant:
-    base-domain: ${TENANT_BASE_DOMAIN:myhr.com}
+    base-domain: ${TENANT_BASE_DOMAIN:workline.casa}
     local-dev-suffix: localhost
     allow-apex: false
     allow-www: false

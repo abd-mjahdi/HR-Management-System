@@ -2,6 +2,7 @@ databaseChangeLog:
   - changeSet:
       id: 001-init-schema
       author: app
+      context: prod
       changes:
         - sqlFile:
             path: db/changelog/001-init-schema.sql
@@ -23,6 +24,7 @@ databaseChangeLog:
   - changeSet:
       id: 003-email-outbox
       author: app
+      context: prod
       changes:
         - sqlFile:
             path: db/changelog/003-email-outbox.sql

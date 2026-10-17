@@ -20,11 +20,14 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
-            # Pull latest code
-            cd /home/deploy/app || git clone https://github.com/abd-mjahdi/Employee-HR-Management-System.git /home/deploy/app && cd /home/deploy/app
+            if [ ! -d /home/deploy/app/.git ]; then
+                git clone https://github.com/abd-mjahdi/Employee-HR-Management-System.git /home/deploy/app
+            fi
+            
+            cd /home/deploy/app
             git pull origin main
 
-            # Write .env file from secrets
+            # Create production environment file
             cat > .env << EOF
             POSTGRES_DB=employee_hr
             POSTGRES_USER=hr
@@ -34,10 +37,9 @@ jobs:
             FRONTEND_PORT=4200
             JWT_SECRET=${{ secrets.JWT_SECRET }}
             BOOTSTRAP_KEY=
-            LIQUIBASE_CONTEXTS=seed
+            LIQUIBASE_CONTEXTS=prod
             TENANT_DEV_DEFAULT_SLUG=
             EOF
 
             # Deploy
-            docker compose down --remove-orphans || true
             docker compose up --build -d

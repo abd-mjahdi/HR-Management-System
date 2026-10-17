@@ -1,0 +1,36 @@
+
+
+spring:
+
+  mail:
+    host: mailpit
+    port: 1025
+    username:
+    password:
+    properties:
+      mail:
+        smtp:
+          auth: false
+          starttls:
+            enable: false
+
+  jpa:
+    # Log SQL queries during development to help debug
+    show-sql: true
+
+app:
+  mail:
+    from: noreply@hrapp.local
+
+  tenant:
+    # Don't trust X-Forwarded-Host locally — not behind a real proxy
+    trust-forwarded-host: false
+
+logging:
+  level:
+    root: INFO
+    com.example.employeetimetracking: DEBUG
+    liquibase: INFO
+    org.springframework.web: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql: TRACE

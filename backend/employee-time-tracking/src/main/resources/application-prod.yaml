@@ -1,0 +1,36 @@
+
+spring:
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+
+  jpa:
+    # Never log SQL in production — performance + security
+    show-sql: false
+
+app:
+  mail:
+    from: ${MAIL_FROM:noreply@yourdomain.com}
+
+  tenant:
+    # Trust X-Forwarded-Host sent by the nginx reverse proxy.
+    # Safe only because nginx is the sole entry point — firewall
+    # must block direct access to port 8080 from the internet.
+    trust-forwarded-host: true
+
+logging:
+  level:
+    root: WARN
+    com.example.employeetimetracking: INFO
+    liquibase: WARN
+    org.springframework.web: WARN
+    org.hibernate: WARN

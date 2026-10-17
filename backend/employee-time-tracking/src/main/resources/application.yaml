@@ -55,11 +55,11 @@ app:
     # Empty disables POST /internal/bootstrap/company. Set BOOTSTRAP_KEY for first-run only.
     key: ${BOOTSTRAP_KEY:}
   tenant:
-    base-domain: myhr.com
+    base-domain: ${TENANT_BASE_DOMAIN:myhr.com}
     local-dev-suffix: localhost
     allow-apex: false
     allow-www: false
-    trust-forwarded-host: false
+    trust-forwarded-host: ${TENANT_TRUST_FORWARDED_HOST:false}
     # Production must leave this empty. Local API on localhost:8080: TENANT_DEV_DEFAULT_SLUG=acme
     dev-default-slug: ${TENANT_DEV_DEFAULT_SLUG:}
     reserved-slugs:

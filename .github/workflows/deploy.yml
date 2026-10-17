@@ -18,26 +18,26 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
+            # Clone repo on first run, pull on subsequent runs
             if [ ! -d /home/deploy/app/.git ]; then
                 git clone https://github.com/abd-mjahdi/Employee-HR-Management-System.git /home/deploy/app
             fi
-            
+
             cd /home/deploy/app
             git pull origin main
 
-            # Create production environment file
-            cat > .env << EOF
-            POSTGRES_DB=employee_hr
-            POSTGRES_USER=hr
+            # Write only secrets + vars with no safe default.
+            # Everything else already has a correct default in docker-compose.yml.
+            # LIQUIBASE_CONTEXTS is intentionally empty: seeds schema only, no demo data.
+            cat > .env << 'EOF'
             POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
-            POSTGRES_PORT=5432
-            BACKEND_PORT=8080
-            FRONTEND_PORT=4200
             JWT_SECRET=${{ secrets.JWT_SECRET }}
-            BOOTSTRAP_KEY=
+            SPRING_PROFILES_ACTIVE=prod
+            TENANT_BASE_DOMAIN=151.80.56.83.nip.io
+            TENANT_TRUST_FORWARDED_HOST=true
+            FRONTEND_TENANT_URL_TEMPLATE=http://{slug}.151.80.56.83.nip.io
             LIQUIBASE_CONTEXTS=prod
-            TENANT_DEV_DEFAULT_SLUG=
             EOF
 
-            # Deploy
-            docker compose up --build -d
+            # Deploy (--remove-orphans cleans up containers from removed services)
+            docker compose up --build -d --remove-orphans

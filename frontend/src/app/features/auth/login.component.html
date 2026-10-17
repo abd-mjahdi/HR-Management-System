@@ -81,10 +81,6 @@
             <input type="checkbox" [checked]="rememberMe()" (change)="rememberMe.set(!rememberMe())" />
             <span>Remember me</span>
           </label>
-
-          <button type="button" class="btn-link" (click)="fillDemoCredentials()">
-            Fill demo HR login
-          </button>
         </div>
 
         <button type="submit" class="btn-submit" [disabled]="isLoading()">

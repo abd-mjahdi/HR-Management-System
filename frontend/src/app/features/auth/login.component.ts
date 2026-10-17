@@ -41,19 +41,6 @@ export class LoginComponent {
     this.showPassword.update((prev) => !prev);
   }
 
-  fillDemoCredentials(): void {
-    if (this.tenant.slug === 'globex') {
-      this.loginForm.patchValue({
-        email: 'emma.frost@globex.com',
-        password: 'password'
-      });
-      return;
-    }
-    this.loginForm.patchValue({
-      email: 'alice.morgan@company.com',
-      password: 'password'
-    });
-  }
 
   onFindCompany(): void {
     this.domainError.set(null);

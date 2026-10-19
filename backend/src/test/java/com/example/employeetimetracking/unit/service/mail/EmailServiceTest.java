@@ -12,6 +12,8 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mail.javamail.JavaMailSender;
+import jakarta.mail.Part;
+import jakarta.mail.Multipart;
 
 import java.util.Properties;
 
@@ -52,35 +54,30 @@ class EmailServiceTest {
         MimeMessage sent = captor.getValue();
         assertEquals("You're invited to join Acme", sent.getSubject());
         String content = readBody(sent);
+        System.out.println(content);
         assertTrue(content.contains("http://acme.localhost:4200/invite?token=raw-token"));
         assertTrue(content.contains("12 October 2026 at 21:00 UTC"));
         assertTrue(content.contains("Accept invitation"));
     }
 
-    private static String readBody(MimeMessage message) throws Exception {
-        Object content = message.getContent();
+    private String readBody(Part part) throws Exception {
+        Object content = part.getContent();
+
         if (content instanceof String text) {
             return text;
         }
-        if (content instanceof MimeMultipart multipart) {
+
+        if (content instanceof Multipart multipart) {
             StringBuilder body = new StringBuilder();
+
             for (int i = 0; i < multipart.getCount(); i++) {
-                BodyPart part = multipart.getBodyPart(i);
-                Object partContent = part.getContent();
-                if (partContent instanceof String text) {
-                    body.append(text);
-                } else if (partContent instanceof MimeMultipart nested) {
-                    for (int j = 0; j < nested.getCount(); j++) {
-                        Object nestedContent = nested.getBodyPart(j).getContent();
-                        if (nestedContent instanceof String text) {
-                            body.append(text);
-                        }
-                    }
-                }
+                body.append(readBody(multipart.getBodyPart(i))).append("\n");
             }
+
             return body.toString();
         }
-        return String.valueOf(content);
+
+        return "";
     }
 
     @Test

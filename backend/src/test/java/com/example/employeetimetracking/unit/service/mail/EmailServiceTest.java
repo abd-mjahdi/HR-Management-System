@@ -54,7 +54,6 @@ class EmailServiceTest {
         MimeMessage sent = captor.getValue();
         assertEquals("You're invited to join Acme", sent.getSubject());
         String content = readBody(sent);
-        System.out.println(content);
         assertTrue(content.contains("http://acme.localhost:4200/invite?token=raw-token"));
         assertTrue(content.contains("12 October 2026 at 21:00 UTC"));
         assertTrue(content.contains("Accept invitation"));

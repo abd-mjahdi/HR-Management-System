@@ -1,0 +1,64 @@
+name: hr-system-prod
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-employee_hr}
+      POSTGRES_USER: ${POSTGRES_USER:-hr}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-hr}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-hr} -d ${POSTGRES_DB:-employee_hr}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    restart: unless-stopped
+
+  backend:
+    image: ghcr.io/abd-mjahdi/hr-backend:${IMAGE_TAG:-latest}
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-employee_hr}
+      DB_USERNAME: ${POSTGRES_USER:-hr}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-hr}
+      JWT_SECRET: ${JWT_SECRET:-change-me-to-a-32-byte-or-longer-secret-key!!}
+      BOOTSTRAP_KEY: ${BOOTSTRAP_KEY:-}
+      SPRING_LIQUIBASE_CONTEXTS: ${LIQUIBASE_CONTEXTS:-seed}
+      TENANT_DEV_DEFAULT_SLUG: ${TENANT_DEV_DEFAULT_SLUG:-}
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
+      TENANT_BASE_DOMAIN: ${TENANT_BASE_DOMAIN:-workline.casa}
+      TENANT_TRUST_FORWARDED_HOST: ${TENANT_TRUST_FORWARDED_HOST:-true}
+      FRONTEND_TENANT_URL_TEMPLATE: ${FRONTEND_TENANT_URL_TEMPLATE:-http://{slug}.workline.casa}
+      TZ: UTC
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8080'",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 18
+      start_period: 60s
+    restart: unless-stopped
+
+  frontend:
+    image: ghcr.io/abd-mjahdi/hr-frontend:${IMAGE_TAG:-latest}
+    ports:
+      - "${FRONTEND_PORT:-4200}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

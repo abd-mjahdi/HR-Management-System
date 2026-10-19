@@ -109,4 +109,10 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
     }
 
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ErrorResponseDto> handleIllegalState(IllegalStateException exception) {
+        ErrorResponseDto response = new ErrorResponseDto("An unexpected error occurred");
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+    }
+
 }

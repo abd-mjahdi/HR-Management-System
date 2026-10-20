@@ -37,7 +37,7 @@ spring:
     enabled: true
     change-log: classpath:db/changelog/db.changelog-master.yaml
     # prod = schema only, seed = demo data, prod,seed = both. Empty = nothing runs.
-    contexts: ${LIQUIBASE_CONTEXTS:seed}
+    contexts: ${LIQUIBASE_CONTEXTS:prod}
 
 holidays:
   dates:

@@ -1,84 +1,160 @@
-# Frontend
+# 🖥️ Workline HR — Frontend Client
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.2.19.
+[![Angular](https://img.shields.io/badge/Angular-21.2-red.svg?logo=angular)](https://angular.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue.svg?logo=typescript)](https://www.typescriptlang.org/)
+[![Vitest](https://img.shields.io/badge/Vitest-4.x-brightgreen.svg?logo=vitest)](https://vitest.dev/)
+[![Prettier](https://img.shields.io/badge/Code%20Style-Prettier-ff69b4.svg)](https://prettier.io/)
 
-## Development server
+> **Modern, enterprise-grade Single Page Application** built with Angular 21 Standalone Components, featuring dynamic subdomain multi-tenancy, strict role-based access control, and an Apple-inspired interface design system.
 
-The UI takes the company from the hostname (`acme.localhost` → `acme`) and calls the API on the **same hostname**, port `8080`.
+---
 
-1. Add this line to your hosts file (`C:\Windows\System32\drivers\etc\hosts` on Windows, `/etc/hosts` on macOS/Linux):
+## 🎨 Design Philosophy & UX Standards
 
-   ```
-   127.0.0.1 acme.localhost globex.localhost
-   ```
+Workline HR is designed to keep human resource management quiet, clear, and distraction-free.
 
-2. Start the Spring Boot API (listens on `8080`).
-3. From this `frontend` folder:
+* **Apple Human Interface Principles:** Instant tactile feedback on pointer down (`scale(0.97)`), critically damped spring transitions without artificial bounce, spatial consistency, and translucent materials (`backdrop-filter: blur(20px)`).
+* **System Typography:** Uses native platform font stacks (`system-ui`, San Francisco on macOS/iOS) with strict hierarchy (large titles, section headers, body, captions) preventing layout shifts.
+* **Wayfinding & Navigation:** Every surface answers three questions: *Where am I? What can I do here? How do I leave?* Nested screens always feature a leading Back control linking to their parent root.
+* **Zero Decorative Clutter:** No decorative illustrations, no emoji badges, and no noisy gradient washes. Meaning is conveyed through typography, spacing, and subtle contrast.
 
-   ```bash
-   npm start
-   ```
+---
 
-4. Open [http://localhost:4200](http://localhost:4200), click **Log in**, enter company domain `acme` (or `globex`). You are sent to that company’s login page.
+## 🏛️ Frontend Architecture
 
-   - Acme: [http://acme.localhost:4200/login](http://acme.localhost:4200/login) — `alice.morgan@company.com` / `password`
-   - Globex: [http://globex.localhost:4200/login](http://globex.localhost:4200/login) — `emma.frost@globex.com` / `password`
-
-Invite links must be opened on that company’s host, for example `http://acme.localhost:4200/invite?token=...`.
-
-## Docker
-
-From the repo root (hosts file still required, same URLs and seed logins as above):
-
-```bash
-copy .env.example .env
-docker compose up --build
+```
+frontend/src/app/
+├── core/                        # Singleton core infrastructure
+│   ├── guards/                  # Route protection guards
+│   │   ├── auth.guard.ts        # authGuard & guestGuard
+│   │   ├── role.guard.ts        # Role-based route authorization
+│   │   └── tenant.guard.ts      # Subdomain tenant validator & apex guard
+│   ├── http/                    # API error models and mapping
+│   ├── interceptors/            # HTTP interceptors
+│   │   └── auth.interceptor.ts  # Injects Bearer JWT; handles 401 logout
+│   ├── models/                  # Strictly-typed TypeScript interfaces
+│   ├── services/                # Feature API communication services
+│   └── tenant/                  # Subdomain extraction & URL resolution
+│       ├── tenant.service.ts
+│       └── tenant.util.ts
+├── features/                    # Feature domain modules (Smart Components)
+│   ├── auth/                    # Login, Company Lookup, Invite Acceptance
+│   ├── dashboard/               # Role-aware executive summary & metrics
+│   ├── departments/             # Department directory & editing
+│   ├── layout/                  # Main App Shell (Sidebar, Header, Profile Popover)
+│   ├── leave/                   # Leave requests, balance tracking & approval queues
+│   ├── profile/                 # Current user account & preferences
+│   ├── projects/                # Project allocations for timesheets
+│   ├── reports/                 # Payroll, utilization, compliance reporting
+│   ├── time/                    # Daily timesheets, clock-in/out, breaks, correction flows
+│   └── users/                   # Employee directory, onboarding invitations, detail views
+├── app.config.ts                # Application configuration & providers
+└── app.routes.ts                # Top-level route hierarchy & permissions
 ```
 
-On macOS/Linux use `cp .env.example .env`. Postgres only: `docker compose up postgres`.
+---
 
-## Code scaffolding
+## 🌐 Dynamic Multi-Tenancy & Routing
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+The client dynamically configures its API connection and views based on the browser's hostname:
 
-```bash
-ng generate component component-name
+1. **Subdomain Detection (`TenantService`):**
+   * Inspects `window.location.hostname`.
+   * Maps `acme.localhost` or `acme.workline.casa` $\rightarrow$ Tenant slug: `acme`.
+2. **Dynamic API Routing:**
+   * In development, requests automatically target `http://{slug}.localhost:8080`.
+   * In production, requests target the origin domain or configured reverse proxy without hardcoded port overrides.
+3. **Route Guard Hierarchy:**
+   * **`tenantGuard`**: Validates whether the browser is currently accessing a valid tenant subdomain. If hit on the bare apex domain, it redirects to the company lookup flow.
+   * **`marketingHomeGuard`**: Renders the public landing page only on the root domain (`localhost:4200` or `workline.casa`).
+   * **`guestGuard`**: Prevents authenticated users from seeing login forms, redirecting them to `/dashboard`.
+   * **`authGuard`**: Gates application features behind active JWT sessions in `localStorage`.
+   * **`roleGuard`**: Restricts sensitive screens by verifying roles against `EMPLOYEE`, `MANAGER`, and `HR_ADMIN`.
+
+---
+
+## 📋 Feature Overview
+
+### 1. Authentication & Onboarding
+* **Company Domain Discovery:** Apex page allows users to look up their company workspace.
+* **Subdomain Sign-in:** Tenant-branded login authenticated against the backend JWT API.
+* **Invitation Acceptance (`/invite?token=...`):** Secure token verification allowing invited employees to set their credentials and join their organization directly.
+
+### 2. Time Tracking (`/time`)
+* **Interactive Time Sheet:** Log clock-in and clock-out hours, record break intervals, and allocate time to company projects.
+* **Correction Requests:** Allows employees to request retrospective modifications on submitted or locked entries with audit-trailed manager approvals.
+* **Manager Review Inbox:** Unified pending approvals queue with approve/reject actions.
+
+### 3. Leave Management (`/leave`)
+* **Category Balance Overview:** Live visualization of remaining vacation, sick, and personal days.
+* **Smart Request Submission:** Date range selection with automatic non-working day and holiday subtraction.
+* **Two-Tier Approval Flow:** Manager approval with optional HR sign-off for extended or company-wide absences.
+
+### 4. People Operations & Team Directory (`/people`, `/team`)
+* **Employee Directory:** Searchable and filterable employee table by department, status, and role.
+* **Direct Provisioning:** Form for HR Administrators to directly create employee profiles.
+* **Invitation Pipeline:** HR Administrators can send onboarding invitation links with pre-assigned roles, departments, and reporting managers.
+
+### 5. Reports & Payroll Auditing (`/reports`)
+* **Payroll & Overtime Summary:** Calculates standard hours, daily overtime (>8h), and weekly overtime (>40h) with direct CSV download.
+* **Department Utilization & Project Distribution:** Tracks resource allocation across active projects and business units.
+* **Compliance Checks:** Highlights missing timesheets, excessive daily intervals, and unapproved requests.
+
+---
+
+## ⚡ Development Setup
+
+### 1. Prerequisites
+* **Node.js** v20.x or v22.x
+* **npm** v10+
+
+### 2. Configure Local Hosts
+Because the application detects tenants from hostnames, map your local loopback address:
+
+Add to `C:\Windows\System32\drivers\etc\hosts` (Windows) or `/etc/hosts` (macOS/Linux):
+```hosts
+127.0.0.1  acme.localhost globex.localhost
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
-
+### 3. Install & Start
 ```bash
-ng generate --help
+# Install dependencies
+npm install
+
+# Start local dev server (listens on 127.0.0.1:4200)
+npm start
 ```
 
-## Building
+### 4. Access Local Portals
+* **Acme Corp:** [http://acme.localhost:4200/login](http://acme.localhost:4200/login)
+* **Globex Corp:** [http://globex.localhost:4200/login](http://globex.localhost:4200/login)
+* **Find Company Flow:** [http://localhost:4200](http://localhost:4200)
 
-To build the project run:
+*Seed credentials for all accounts: `password`*
 
-```bash
-ng build
-```
+---
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+## 🧪 Testing & Code Quality
 
-## Running unit tests
-
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
-
-```bash
-ng test
-```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
+### Unit Tests with Vitest
+Unit tests are executed using **Vitest** for sub-second feedback and jsdom environment simulation:
 
 ```bash
-ng e2e
+# Run unit tests in watch mode
+npm test
+
+# Run single-pass test run (used in CI)
+npm test -- --watch=false
 ```
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+### Formatting
+Code style is enforced via **Prettier**:
+```bash
+npx prettier --check "src/**/*.{ts,html,scss}"
+```
 
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+### Production Build
+```bash
+npm run build
+```
+Build output is optimized and emitted to `dist/frontend`.
